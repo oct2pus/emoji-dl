@@ -24,7 +24,7 @@ func main() {
 	var resp *http.Response // API call to mastoAPI emoji
 	var err2 error          // error for resp
 	arg := flag.Args()[0]   // should be a url
-	arg2 := arg
+	arg2 := arg             // used in paths
 
 	exe, err1 := os.Executable()
 
@@ -40,7 +40,11 @@ func main() {
 		arg = "https://" + arg
 	} else if strings.HasPrefix(arg, "http://") {
 		// change http:// to https:// in arg
+		arg2 = strings.TrimPrefix(arg2, "http://")
 		arg = strings.Replace(arg, "http://", "https://", 1)
+	} else {
+		// trim prefix in arg2 to avoid illegal file names
+		arg2 = strings.TrimPrefix(arg2, "https://")
 	}
 
 	resp, err2 = http.Get(arg + "/api/v1/custom_emojis")
@@ -79,7 +83,8 @@ func main() {
 		// *emoji[i] as *(emoji[i]), which doesn't exist
 
 		// all images are always .png files, assumption may break in future
-		file, err6 := os.Create(exe + arg2 + "/" + (*emoji)[i].Shortcode + ".png")
+		file, err6 := os.Create(exe + arg2 + "/" + (*emoji)[i].Shortcode +
+			".png")
 
 		if hasError(err6) { // fail if cannot create image
 			os.Exit(1) // crash program
