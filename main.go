@@ -12,23 +12,23 @@ import (
 )
 
 type Emoji struct {
-	Shortcode       string
-	StaticUrl       string
-	Url             string
-	VisibleInPicker bool
+	Shortcode       string // emoji name
+	StaticUrl       string // doesn't seem to be used?
+	Url             string // emoji url
+	VisibleInPicker bool   // always returns false?
 }
 
 func main() {
 
-	flag.Parse()
-	var resp *http.Response
-	var err error
-	arg := flag.Args()[0]
+	flag.Parse()            // parse user input
+	var resp *http.Response // API call to mastoAPI emoji
+	var err2 error          // error for resp
+	arg := flag.Args()[0]   // should be a url
 	arg2 := arg
 
-	exe, err6 := os.Executable()
+	exe, err1 := os.Executable()
 
-	if hasError(err6) {
+	if hasError(err1) { // fail if can't find executable path
 		return
 	}
 
@@ -36,14 +36,16 @@ func main() {
 
 	if !strings.HasPrefix(arg, "https://") &&
 		!strings.HasPrefix(arg, "http://") {
+		// add https:// if arg doesn't have it
 		arg = "https://" + arg
 	} else if strings.HasPrefix(arg, "http://") {
+		// change http:// to https:// in arg
 		arg = strings.Replace(arg, "http://", "https://", 1)
 	}
 
-	resp, err = http.Get(arg + "/api/v1/custom_emojis")
+	resp, err2 = http.Get(arg + "/api/v1/custom_emojis")
 
-	if hasError(err) {
+	if hasError(err2) { // fail if api endpoint does not exist
 		return
 	}
 
@@ -51,47 +53,51 @@ func main() {
 
 	defer resp.Body.Close()
 
-	body, err2 := ioutil.ReadAll(resp.Body)
+	body, err3 := ioutil.ReadAll(resp.Body)
 
-	if hasError(err2) {
+	if hasError(err3) { // fail if resp.Body cannot be read
 		return
 	}
 
 	var emoji *[]Emoji
-	err3 := json.Unmarshal(body, &emoji)
+	err4 := json.Unmarshal(body, &emoji)
 
-	if hasError(err3) {
+	if hasError(err4) { // fail if body is not json
 		return
 	}
 
-	err7 := os.MkdirAll(exe+"/"+arg2, os.ModePerm)
+	// create a path to store images
+	err5 := os.MkdirAll(exe+"/"+arg2, os.ModePerm)
 
-	if hasError(err7) {
+	if hasError(err5) { // fail if unable to create path
 		return
 	}
 
 	for i := 0; i < len(*emoji); i++ {
 
-		//	urlReader := strings.NewReader((*emoji)[i].Url)
+		// (*emoji)[i] is used instead of *emoji[i] because the compiler reads
+		// *emoji[i] as *(emoji[i]), which doesn't exist
 
-		file, err4 := os.Create(exe + arg2 + "/" + (*emoji)[i].Shortcode + ".png")
+		// all images are always .png files, assumption may break in future
+		file, err6 := os.Create(exe + arg2 + "/" + (*emoji)[i].Shortcode + ".png")
 
-		if hasError(err4) {
+		if hasError(err6) { // fail if cannot create image
 			os.Exit(1) // crash program
 		}
 		defer file.Close()
 
-		img, err8 := http.Get((*emoji)[i].Url)
+		img, err7 := http.Get((*emoji)[i].Url)
 
-		if hasError(err8) {
+		if hasError(err7) { // fail if emoji[i].Url is a not a real URL
 			os.Exit(1) //crash program
 		}
 
 		defer img.Body.Close()
 
-		_, err5 := io.Copy(file, img.Body)
+		// write image to file created earlier
+		_, err8 := io.Copy(file, img.Body)
 
-		if hasError(err5) {
+		if hasError(err8) { // fail if img.Body does not download image
 			os.Exit(1) // crash program
 		}
 
@@ -102,6 +108,7 @@ func main() {
 
 }
 
+// helper function
 func hasError(err error) bool {
 	if err != nil {
 		fmt.Println(err.Error)
