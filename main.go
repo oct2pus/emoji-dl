@@ -36,12 +36,13 @@ func main() {
 	arg2 := arg             // used in paths
 	var wg sync.WaitGroup   // waitgroup used for downloading
 
-	exe, err := os.Executable()
-	if hasError(err) { // fail if can't find executable path
+	wd, err := os.Getwd()
+	wd += "/"
+	if hasError(err) { // fail if can't find working directory
 		return
 	}
 
-	exe, arg, arg2 = processNames(exe, arg, arg2)
+	arg, arg2 = processNames(arg, arg2)
 
 	resp, err = http.Get(arg + "/api/v1/custom_emojis")
 
@@ -67,7 +68,7 @@ func main() {
 	}
 
 	// create a path to store images
-	err = os.MkdirAll(exe+"/"+arg2, os.ModePerm)
+	err = os.MkdirAll(wd+"/"+arg2, os.ModePerm)
 
 	if hasError(err) { // fail if unable to create path
 		return
@@ -76,7 +77,7 @@ func main() {
 	if len(*emoji) <= BATCH {
 		wg.Add(len(*emoji))
 		for i := 0; i < len(*emoji); i++ {
-			go grabImages(exe, arg, arg2, (*emoji)[i], &wg)
+			go grabImages(wd, arg, arg2, (*emoji)[i], &wg)
 		}
 	} else {
 		// insane amount of emojis
@@ -89,7 +90,7 @@ func main() {
 		for o := 0; o < batches; o++ {
 			wg.Add(BATCH)
 			for p := 0; p < BATCH; p++ {
-				go grabImages(exe, arg, arg2, (*emoji)[i], &wg)
+				go grabImages(wd, arg, arg2, (*emoji)[i], &wg)
 				i++
 			}
 			wg.Wait()
@@ -97,7 +98,7 @@ func main() {
 		}
 		wg.Add(r)
 		for o := 0; o < r; o++ {
-			go grabImages(exe, arg, arg2, (*emoji)[i], &wg)
+			go grabImages(wd, arg, arg2, (*emoji)[i], &wg)
 			i++
 		}
 	}
@@ -107,9 +108,9 @@ func main() {
 }
 
 // grabImages...grabs images and downloads them.
-func grabImages(exe, arg, arg2 string, emoji Emoji, wg *sync.WaitGroup) {
+func grabImages(wd, arg, arg2 string, emoji Emoji, wg *sync.WaitGroup) {
 	defer wg.Done()
-	file, err := os.Create(exe + arg2 + "/" + emoji.Shortcode +
+	file, err := os.Create(wd + arg2 + "/" + emoji.Shortcode +
 		".png")
 	if hasError(err) { // fail if cannot create image
 		return
@@ -128,7 +129,7 @@ func grabImages(exe, arg, arg2 string, emoji Emoji, wg *sync.WaitGroup) {
 		return
 	}
 
-	fmt.Println(exe + arg2 + "/" + emoji.Shortcode + ".png created")
+	fmt.Println(wd + arg2 + "/" + emoji.Shortcode + ".png created")
 
 }
 
@@ -143,8 +144,8 @@ func hasError(err error) bool {
 
 // processNames converts the following into acceptable outputs for paths
 // and file names.
-func processNames(exe, arg, arg2 string) (string, string, string) {
-	exe = strings.TrimSuffix(exe, "gomoji") // hardcoded name, bad
+func processNames(arg, arg2 string) (string, string) {
+	//wd = strings.TrimSuffix(wd, "gomoji") // hardcoded name, bad
 	if !strings.HasPrefix(arg, "https://") &&
 		!strings.HasPrefix(arg, "http://") {
 		// add https:// if arg doesn't have it
@@ -158,5 +159,5 @@ func processNames(exe, arg, arg2 string) (string, string, string) {
 		arg2 = strings.TrimPrefix(arg2, "https://")
 	}
 
-	return exe, arg, arg2
+	return arg, arg2
 }
