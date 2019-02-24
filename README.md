@@ -16,10 +16,4 @@ or
 ./gomoji https://instance.name
 ```
 
-The download path is set to this folder, it'll create a sub directory with `instance.name` as the title, and place all images inside of that.
-Currently has an assumption on the filename, modify line 35 to whatever you want to call the file to trim it properly.
-
-## Todo
-
-1. Remove hard coded path
-2. allow user to specify file location
+The Download path is the $PWD/instance.name.social
