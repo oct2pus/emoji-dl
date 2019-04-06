@@ -6,119 +6,197 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"math"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
-	//	"time"
 )
 
+type batch struct {
+	Size      int
+	Downloads bool
+}
+
+// Batch is an accessor to two configurable elements that have default values.
+//
+// - `Batch.Size` is how many to try and download at once
+//	 Default: 75
+// - `Batch.Downloads` enables or disables batch downloading;
+//	 Default: true
+var Batch = batch{Size: 1000, Downloads: true}
+
+// Emoji represents an Emoji object returned by a MastoAPI.
 type Emoji struct {
 	Shortcode       string // emoji name
-	StaticUrl       string // doesn't seem to be used?
-	Url             string // emoji url
+	StaticURL       string // doesn't seem to be used?
+	URL             string // emoji url
 	VisibleInPicker bool   // always returns false?
 }
 
-// BATCH is how many reponses gomoji sends out at once
-// increase at your own peril
-// well more like the web server's peril,
-// higher numbers seem to make gomoji hit GOAWAY responses
-const BATCH = 75
+// Connection represents a connection sent out, contains an Emoji and an
+// indiciation if it failed.
+type Connection struct {
+	Emoji      Emoji
+	Downloaded bool
+}
+
+// A Collection is all the Connections sent out to a server.
+type Collection []Connection
+
+// NewCollection returns a slice of Connection objects.
+// Downloaded will always be initalized as false.
+func NewCollection(emoji *[]Emoji) Collection {
+	p := make([]Connection, 0)
+	for i := range *emoji {
+		p = append(p, Connection{Emoji: (*emoji)[i], Downloaded: false})
+	}
+	return p
+}
+
+// CollectFailed returns a version of a Collection that has stripped out all
+//
+func (c Collection) CollectFailed() Collection {
+	p := make([]Connection, 0)
+	for _, conn := range c {
+		if !conn.Downloaded {
+			p = append(p, conn)
+		}
+	}
+	return p
+}
+
+// HasFailed returns if any individual Connection in the Collection has not
+// downloaded. A value of 0 is always true.
+func (c Collection) HasFailed() bool {
+	if len(c) > 0 {
+		for _, ele := range c {
+			if !ele.Downloaded {
+				return true
+			}
+		}
+	}
+	return false
+}
 
 func main() {
 
-	flag.Parse()            // parse user input
-	var resp *http.Response // API call to mastoAPI emoji
-	var err error           // error for resp
-	arg := flag.Args()[0]   // should be a url
-	arg2 := arg             // used in paths
-	var wg sync.WaitGroup   // waitgroup used for downloading
+	flag.Parse() // parse user input
+
+	var resp *http.Response   // API call to mastoAPI emoji
+	var err error             // error for resp
+	var emoji *[]Emoji        // contains unmarshalled data
+	siteURL := flag.Args()[0] // should be a url
+	pathURL := siteURL        // used in paths
+	var wg sync.WaitGroup     // waitgroup used for downloading
 
 	wd, err := os.Getwd()
-	wd += "/"
 	if hasError(err) { // fail if can't find working directory
 		return
 	}
+	wd += "/"
 
-	arg, arg2 = processNames(arg, arg2)
+	siteURL, pathURL = processNames(siteURL, pathURL)
 
-	resp, err = http.Get(arg + "/api/v1/custom_emojis")
-
+	resp, err = http.Get(siteURL + "/api/v1/custom_emojis")
 	if hasError(err) { // fail if api endpoint does not exist
 		return
 	}
+	defer resp.Body.Close()
 
 	fmt.Println(resp.Status)
 
-	defer resp.Body.Close()
-
 	body, err := ioutil.ReadAll(resp.Body)
-
 	if hasError(err) { // fail if resp.Body cannot be read
 		return
 	}
 
-	var emoji *[]Emoji
 	err = json.Unmarshal(body, &emoji)
-
 	if hasError(err) { // fail if body is not json
 		return
 	}
 
-	// create a path to store images
-	err = os.MkdirAll(wd+"/"+arg2, os.ModePerm)
+	conn := NewCollection(emoji)
 
+	// create a path to store images
+	err = os.MkdirAll(wd+"/"+pathURL, os.ModePerm)
 	if hasError(err) { // fail if unable to create path
 		return
 	}
-	// sane amount of emojis
-	if len(*emoji) <= BATCH {
-		wg.Add(len(*emoji))
-		for i := 0; i < len(*emoji); i++ {
-			go grabImages(wd, arg, arg2, (*emoji)[i], &wg)
-		}
-	} else {
-		// insane amount of emojis
-		// TODO: less gross way of writing this
-		i, r := 0, 0
-		batches := len(*emoji) / BATCH
-		if len(*emoji)%BATCH != 0 {
-			r = int(math.Abs(float64(len(*emoji) - BATCH*batches)))
-		}
-		for o := 0; o < batches; o++ {
-			wg.Add(BATCH)
-			for p := 0; p < BATCH; p++ {
-				go grabImages(wd, arg, arg2, (*emoji)[i], &wg)
-				i++
+
+	amount := len(conn)
+	if Batch.Downloads {
+		amount = Batch.Size
+	}
+
+	for conn.HasFailed() {
+		if len(conn) <= amount {
+			wg.Add(len(conn))
+			for i := 0; i < len(conn); i++ {
+				go grabImages(wd, siteURL, pathURL, &conn[i], &wg)
 			}
 			wg.Wait()
-			//			time.Sleep(5 * time.Second)
+		} else {
+			println(len(conn))
+			b := (len(conn) / Batch.Size)
+			count := 0
+			for i := 0; i < b; i++ {
+				wg.Add(amount)
+				fmt.Printf("\n\n\n\n\n=== === ===\nAmount: %v\nConns: %v\nCount: %v\nb: %v\n", amount, len(conn), count, b)
+
+				for o := 0; o <= amount; o++ {
+					go grabImages(wd, siteURL, pathURL, &conn[count], &wg)
+					count++
+				}
+				wg.Wait()
+			}
 		}
-		wg.Add(r)
-		for o := 0; o < r; o++ {
-			go grabImages(wd, arg, arg2, (*emoji)[i], &wg)
-			i++
-		}
+		conn = conn.CollectFailed()
 	}
-	wg.Wait()
+	// // cool amount of emojis
+	// if len(conn) <= Batch {
+	// 	wg.Add(len(conn))
+	// 	for i := 0; i < len(conn); i++ {
+	// 		go grabImages(wd, siteURL, pathURL, &conn[i], &wg)
+	// 	}
+	// } else {
+	// 	// biznasty amount of emojis
+	// 	// TODO: less gross way of writing this
+	// 	i, r := 0, 0
+	// 	batches := len(conn) / BATCH
+	// 	if len(conn)%BATCH != 0 {
+	// 		r = total()
+	// 	}
+	// 	for o := 0; o < batches; o++ {
+	// 		wg.Add(BATCH)
+	// 		for p := 0; p < BATCH; p++ {
+	// 			go grabImages(wd, arg, arg2, &conn[i], &wg)
+	// 			i++
+	// 		}
+	// 		wg.Wait()
+	// 		//			time.Sleep(5 * time.Second)
+	// 	}
+	// 	wg.Add(r)
+	// 	for o := 0; o < r; o++ {
+	// 		go grabImages(wd, arg, arg2, &conn[i], &wg)
+	// 		i++
+	// 	}
+	// }
+	// wg.Wait()
 	fmt.Println("Finished!")
 
 }
 
 // grabImages...grabs images and downloads them.
-func grabImages(wd, arg, arg2 string, emoji Emoji, wg *sync.WaitGroup) {
+func grabImages(wd, arg, arg2 string, conn *Connection, wg *sync.WaitGroup) {
 	defer wg.Done()
-	file, err := os.Create(wd + arg2 + "/" + emoji.Shortcode +
-		".png")
+	file, err := os.Create(wd + arg2 + "/" + conn.Emoji.Shortcode + ".png")
 	if hasError(err) { // fail if cannot create image
 		return
 	}
 	defer file.Close()
 
-	img, err := http.Get(emoji.Url)
-	if hasError(err) { // fail if emoji.Url is a not a real URL
+	img, err := http.Get(conn.Emoji.URL)
+	if hasError(err) { // fail for a variety of reasons
 		return
 	}
 	defer img.Body.Close()
@@ -129,7 +207,8 @@ func grabImages(wd, arg, arg2 string, emoji Emoji, wg *sync.WaitGroup) {
 		return
 	}
 
-	fmt.Println(wd + arg2 + "/" + emoji.Shortcode + ".png created")
+	conn.Downloaded = true
+	fmt.Println(wd + arg2 + "/" + conn.Emoji.Shortcode + ".png created")
 
 }
 
@@ -160,4 +239,8 @@ func processNames(arg, arg2 string) (string, string) {
 	}
 
 	return arg, arg2
+}
+
+func spares(conns int) int {
+	return 0
 }
