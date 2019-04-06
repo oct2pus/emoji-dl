@@ -23,7 +23,7 @@ type batch struct {
 //	 Default: 75
 // - `Batch.Downloads` enables or disables batch downloading;
 //	 Default: true
-var Batch = batch{Size: 1000, Downloads: true}
+var Batch = batch{Size: 500, Downloads: true}
 
 // Emoji represents an Emoji object returned by a MastoAPI.
 type Emoji struct {
@@ -239,8 +239,4 @@ func processNames(arg, arg2 string) (string, string) {
 	}
 
 	return arg, arg2
-}
-
-func spares(conns int) int {
-	return 0
 }
