@@ -23,7 +23,7 @@ type batch struct {
 //	 Default: 75
 // - `Batch.Downloads` enables or disables batch downloading;
 //	 Default: true
-var Batch = batch{Size: 500, Downloads: true}
+var Batch = batch{Size: 75, Downloads: true}
 
 // Emoji represents an Emoji object returned by a MastoAPI.
 type Emoji struct {
@@ -56,12 +56,14 @@ func NewCollection(emoji *[]Emoji) Collection {
 // CollectFailed returns a version of a Collection that has stripped out all
 //
 func (c Collection) CollectFailed() Collection {
+	fmt.Printf("\nPrevious: %v\n", len(c))
 	p := make([]Connection, 0)
 	for _, conn := range c {
 		if !conn.Downloaded {
 			p = append(p, conn)
 		}
 	}
+	fmt.Printf("New: %v\n", len(p))
 	return p
 }
 
@@ -143,7 +145,7 @@ func main() {
 				wg.Add(amount)
 				fmt.Printf("\n\n\n\n\n=== === ===\nAmount: %v\nConns: %v\nCount: %v\nb: %v\n", amount, len(conn), count, b)
 
-				for o := 0; o <= amount; o++ {
+				for o := 0; o < amount; o++ {
 					go grabImages(wd, siteURL, pathURL, &conn[count], &wg)
 					count++
 				}
@@ -208,8 +210,7 @@ func grabImages(wd, arg, arg2 string, conn *Connection, wg *sync.WaitGroup) {
 	}
 
 	conn.Downloaded = true
-	fmt.Println(wd + arg2 + "/" + conn.Emoji.Shortcode + ".png created")
-
+	fmt.Printf("\n%v%v/%v.png created, conn.Downloaded = %v", wd, arg2, conn.Emoji.Shortcode, conn.Downloaded)
 }
 
 // hasError is a helper function to print errors.
@@ -224,10 +225,10 @@ func hasError(err error) bool {
 // processNames converts the following into acceptable outputs for paths
 // and file names.
 func processNames(arg, arg2 string) (string, string) {
-	//wd = strings.TrimSuffix(wd, "gomoji") // hardcoded name, bad
+	// add https:// if arg doesn't have it
+
 	if !strings.HasPrefix(arg, "https://") &&
 		!strings.HasPrefix(arg, "http://") {
-		// add https:// if arg doesn't have it
 		arg = "https://" + arg
 	} else if strings.HasPrefix(arg, "http://") {
 		// change http:// to https:// in arg
