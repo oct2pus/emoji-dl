@@ -136,7 +136,6 @@ func main() {
 			}
 			wg.Wait()
 		} else {
-			println(len(conn))
 			b := (len(conn) / Batch.Size)
 			count := 0
 			for i := 0; i < b; i++ {
