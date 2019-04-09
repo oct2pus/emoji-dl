@@ -56,14 +56,12 @@ func NewCollection(emoji *[]Emoji) Collection {
 // CollectFailed returns a version of a Collection that has stripped out all
 //
 func (c Collection) CollectFailed() Collection {
-	fmt.Printf("\nPrevious: %v\n", len(c))
 	p := make([]Connection, 0)
 	for _, conn := range c {
 		if !conn.Downloaded {
 			p = append(p, conn)
 		}
 	}
-	fmt.Printf("New: %v\n", len(p))
 	return p
 }
 
@@ -143,8 +141,6 @@ func main() {
 			count := 0
 			for i := 0; i < b; i++ {
 				wg.Add(amount)
-				fmt.Printf("\n\n\n\n\n=== === ===\nAmount: %v\nConns: %v\nCount: %v\nb: %v\n", amount, len(conn), count, b)
-
 				for o := 0; o < amount; o++ {
 					go grabImages(wd, siteURL, pathURL, &conn[count], &wg)
 					count++
@@ -154,36 +150,6 @@ func main() {
 		}
 		conn = conn.CollectFailed()
 	}
-	// // cool amount of emojis
-	// if len(conn) <= Batch {
-	// 	wg.Add(len(conn))
-	// 	for i := 0; i < len(conn); i++ {
-	// 		go grabImages(wd, siteURL, pathURL, &conn[i], &wg)
-	// 	}
-	// } else {
-	// 	// biznasty amount of emojis
-	// 	// TODO: less gross way of writing this
-	// 	i, r := 0, 0
-	// 	batches := len(conn) / BATCH
-	// 	if len(conn)%BATCH != 0 {
-	// 		r = total()
-	// 	}
-	// 	for o := 0; o < batches; o++ {
-	// 		wg.Add(BATCH)
-	// 		for p := 0; p < BATCH; p++ {
-	// 			go grabImages(wd, arg, arg2, &conn[i], &wg)
-	// 			i++
-	// 		}
-	// 		wg.Wait()
-	// 		//			time.Sleep(5 * time.Second)
-	// 	}
-	// 	wg.Add(r)
-	// 	for o := 0; o < r; o++ {
-	// 		go grabImages(wd, arg, arg2, &conn[i], &wg)
-	// 		i++
-	// 	}
-	// }
-	// wg.Wait()
 	fmt.Println("Finished!")
 
 }
@@ -210,13 +176,13 @@ func grabImages(wd, arg, arg2 string, conn *Connection, wg *sync.WaitGroup) {
 	}
 
 	conn.Downloaded = true
-	fmt.Printf("\n%v%v/%v.png created, conn.Downloaded = %v", wd, arg2, conn.Emoji.Shortcode, conn.Downloaded)
+	fmt.Printf("\n%v%v/%v.png created", wd, arg2, conn.Emoji.Shortcode)
 }
 
 // hasError is a helper function to print errors.
 func hasError(err error) bool {
 	if err != nil {
-		fmt.Printf("error: %v", err)
+		fmt.Printf("\nerror: %v\n", err)
 		return true
 	}
 	return false
