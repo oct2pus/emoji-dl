@@ -1,5 +1,6 @@
-# gomoji
-Simple CLI to grab emojis from Fediverse Instances implimenting the Mastodon API. (e.g. Mastodon and Pleroma)
+# emoji-dl
+Simple CLI to grab emojis from Fediverse Instances implimenting the Mastodon API
+. (e.g. Mastodon and Pleroma)
 
 ## Build
 
@@ -11,9 +12,9 @@ go build
 
 ## usage:
 ```
-./gomoji instance.name
+./emoji-dl instance.name
 or
-./gomoji https://instance.name
+./emoji-dl https://instance.name
 ```
 
 The Download path is the $PWD/instance.name.social
