@@ -19,6 +19,7 @@ or
 
 ### flags:
 ```
+flags should go be the instance.name
 -batch=false to turn batch downloading off (don't forget about the maximum open files limit!)
 -size=INT to change the size of the value* (0 and below set batch=false; otherwise ignored if batch=false)
 -v to display successful downloads.
@@ -26,4 +27,4 @@ or
 *every one of these spawns a goroutine, increasing the size may actually be worse. size is set to 75 by default.
 ```
 
-The Download path is the $PWD/instance.name.social
+The Download path is $PWD/instance.name.social
