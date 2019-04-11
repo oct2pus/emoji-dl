@@ -7,6 +7,7 @@ import (
 	"sync"
 )
 
+// complete is if a batch of emojis have finished downloading.
 var complete = make(chan bool)
 
 // A Collection is all the connections sent out to a server.
@@ -96,7 +97,7 @@ func (c Collection) DownloadAll(dir string) {
 }
 
 // DownloadFinished returns if DownloadAll has completed.
-// returns false if not initalized to begin with.
+// Returns false if DownloadAll has never been called.
 func (c Collection) DownloadFinished() bool {
 	select {
 	case result := <-complete:

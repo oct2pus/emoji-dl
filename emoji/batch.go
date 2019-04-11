@@ -5,9 +5,9 @@ type batch struct {
 	Downloads bool
 }
 
-// Batch is an accessor to two configurable elements that have default values.
+// Batch controls how batching downloads works.
 //
-// Batch.Size is how many to try and download at once
+// Batch.Size determines how many emoji images to try and download at once.
 //
-// Batch.Downloads enables or disables batch downloading
+// Batch.Downloads enables or disables batch downloading.
 var Batch = batch{Size: 75, Downloads: true}
