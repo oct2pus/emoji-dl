@@ -5,7 +5,7 @@ type log struct {
 	Downloads bool
 }
 
-// Verbose is an accessor to two configurable elements that have default values.
+// Verbose is the verbosity of the download.
 //
 // Verbose.Errors determines if errors should be printed to stdout.
 //
