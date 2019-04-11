@@ -37,7 +37,7 @@ func (c *connection) download(dir string, wg *sync.WaitGroup) {
 	}
 
 	if Verbose.Downloads {
-		fmt.Printf("%v/%v.png created.\n", dir, c.Emoji.Shortcode)
+		fmt.Printf("file %v/%v.png created.\n", dir, c.Emoji.Shortcode)
 	}
 
 	c.Downloaded = true
