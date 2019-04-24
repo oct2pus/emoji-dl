@@ -39,6 +39,20 @@ func NewCollection(site string) (Collection, error) {
 	return p, nil
 }
 
+// Present returns both the shortcode and URL for each emoji.
+// shortcodes are stored with the "short" key
+// URLs are stored with the "url" key
+func (c Collection) Present() map[string][]string {
+	s := make(map[string][]string)
+	s["short"] = make([]string, len(c), len(c))
+	s["url"] = make([]string, len(c), len(c))
+	for i := range c {
+		s["short"][i] = c[i].Emoji.Shortcode
+		s["url"][i] = c[i].Emoji.URL
+	}
+	return s
+}
+
 // CollectFailed returns a version of a Collection that has stripped out all
 //
 func (c Collection) collectFailed() Collection {

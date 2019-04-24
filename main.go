@@ -1,9 +1,9 @@
 package main
 
 import (
+	"github.com/oct2pus/emoji-dl/emoji"
 	"flag"
 	"fmt"
-	"gomoji/emoji"
 	"os"
 	"strings"
 )
