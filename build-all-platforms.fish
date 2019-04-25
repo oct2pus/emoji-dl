@@ -13,9 +13,9 @@ function build
     go build -o $bath
     # read write execute for user, only read for group and other
     chmod 744 $bath
+    echo $file
     sha256sum $bath
-    sha256sum $bath > SHA256SUM
-    zip {$file}.zip $bath SHA256SUM
+    zip {$file}.zip $bath
 end
 
 mkdir -p binaries
