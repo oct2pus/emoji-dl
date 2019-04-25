@@ -1,15 +1,26 @@
 #!/usr/bin/fish
-# this build script is very basic. This is just intended to build all
+# this build script is very basic. It is intended to build all
 # "supported"(big airquote) platforms executables.
+# if you just want to compile the application,
+# I recommend just using `go build` in the project root folder.
 
-mkdir -p build
-set -x GOOS linux
-go build -o ./build/emoji-dl-linux
-set -x GOOS darwin
-go build -o ./build/emoji-dl-osx
-set -x GOOS freebsd
-go build -o ./build/emoji-dl-free
-set -x GOOS netbsd
-go build -o ./build/emoji-dl-net
-set -x GOOS linux; set -x GOARCH 386
-go build -o ./build/emoji-dl-linux-386
+# build compiles the application for an ARCH and OS.
+function build 
+    set -x GOOS $argv[1]
+    set -x GOARCH $argv[2]
+    set file emoji-dl-{$argv[1]}-{$argv[2]}
+    set bath {$argv[3]}/{$file}
+    go build -o $bath
+    # read write execute for user, only read for group and other
+    chmod 744 $bath
+    sha256sum $bath
+    sha256sum $bath > SHA256SUM
+    zip {$file}.zip $bath SHA256SUM
+end
+
+mkdir -p binaries
+build linux amd64 binaries
+build linux 386 binaries
+build darwin amd64 binaries
+build freebsd amd64 binaries
+build netbsd amd64 binaries
