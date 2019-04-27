@@ -4,11 +4,13 @@ Simple CLI to grab emojis from Fediverse Instances implimenting the Mastodon API
 
 ## Build
 
-Included is a binary file and the source code, if you'd prefer to compile it yourself do:
+to compile it yourself, clone the repo and run
 
 ```
 go build
 ```
+
+this project *should* be module aware, if you have below go 1.11, it must be cloned into your $GOPATH.
 
 an alternative build script is included, but is only intended to make creating releases significantly simpler.
 
