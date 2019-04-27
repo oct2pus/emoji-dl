@@ -39,4 +39,4 @@ Here is a list of all flags.
 
 The Download path is $PWD/instance.name.social
 
-Windows is not supported. I will take pull requests to fix Windows related issues, but I each supported platform comes first.
+Windows is not supported. I will take pull requests to fix Windows related issues, but supported platform comes first.
