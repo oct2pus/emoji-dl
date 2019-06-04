@@ -14,14 +14,13 @@ this project *should* be module aware, if you have below go 1.11, it must be clo
 
 an alternative build script is included, but is only intended to make creating releases significantly simpler.
 
-## usage:
+## Usage
 ```
 ./emoji-dl instance.name
 or
 ./emoji-dl https://instance.name
 ```
 
-### usage:
 the simplest form is `emoji-dl instance-name-here`, which will silently run and then dump into a folder named after the instance (e.g. `emoji-dl mastodon-social` will dump it into a folder called mastodon.social). I intend to only use golang's build in support for flags, so they are a bit tempermental and work slightly differently than the expected UNIX norms.
 
 Here is a list of all flags.
